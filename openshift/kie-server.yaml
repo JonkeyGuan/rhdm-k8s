@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ks
+  labels:
+    app: ks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ks
+  template:
+    metadata:
+      labels:
+        app: ks
+        cluster: jgrp.k8s.dm-kieserver
+    spec:
+      serviceAccount: rhdm-svc-ac
+      containers:
+        - name: ks
+          image: quay.io/jonkey/rhdm-kieserver-rhel8:7.11.1-3.1638383122
+          resources:
+            limits:
+              cpu: '1'
+              memory: 2Gi
+            requests:
+              cpu: 750m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /services/rest/server/readycheck
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 2
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: /services/rest/server/healthcheck
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 180
+            timeoutSeconds: 2
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 3
+          ports:
+            - name: jolokia
+              containerPort: 8778
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: Always
+          env:
+            - name: KIE_SERVER_LOCATION
+              value: 'http://${POD_IP}:8080/services/rest/server'
+            - name: KIE_SERVER_CONTROLLER_HOST
+              value: bc
+            - name: WORKBENCH_SERVICE_NAME
+              value: bc
+            - name: KIE_ADMIN_USER
+              value: admin
+            - name: KIE_ADMIN_PWD
+              value: admin
+            - name: KIE_SERVER_MODE
+              value: DEVELOPMENT
+            - name: KIE_SERVER_ID
+              value: 'default-kieserver'
+            - name: KIE_SERVER_STARTUP_STRATEGY
+              value: ControllerBasedStartupStrategy
+            - name: KUBERNETES_LABELS
+              value: cluster=jgrp.k8s.dm-kieserver
+            - name: MAVEN_REPOS
+              value: 'RHDMCENTR,EXTERNAL'
+            - name: RHDMCENTR_MAVEN_REPO_ID
+              value: repo-rhdmcentr
+            - name: RHDMCENTR_MAVEN_REPO_SERVICE
+              value: bc
+            - name: RHDMCENTR_MAVEN_REPO_PATH
+              value: /maven2/
+            - name: RHDMCENTR_MAVEN_REPO_USERNAME
+              value: admin
+            - name: RHDMCENTR_MAVEN_REPO_PASSWORD
+              value: admin
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+        
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: ks
+  labels:
+    app: ks
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: ks
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: ks
+  labels:
+    app: ks
+spec:
+  to:
+    kind: Service
+    name: ks
+  port:
+    targetPort: 8080

@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bc
+  labels:
+    app: bc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bc
+  template:
+    metadata:
+      labels:
+        app: bc
+        cluster: jgrp.k8s.dm-businesscentral
+    spec:
+      serviceAccount: rhdm-svc-ac
+      containers:
+        - name: bc
+          image: quay.io/jonkey/rhdm-decisioncentral-rhel8:7.11.1-2.1638383127
+          resources:
+            limits:
+              cpu: '2'
+              memory: 4Gi
+            requests:
+              cpu: 1500m
+              memory: 3Gi
+          readinessProbe:
+            httpGet:
+              path: /rest/ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 60
+            timeoutSeconds: 2
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: /rest/healthy
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 90
+            timeoutSeconds: 2
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 10
+          ports:
+            - name: jolokia
+              containerPort: 8778
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: Always
+          env:
+            - name: KIE_ADMIN_USER
+              value: admin
+            - name: KIE_ADMIN_PWD
+              value: admin
+            - name: KUBERNETES_LABELS
+              value: cluster=jgrp.k8s.dm-businesscentral
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: bc
+  labels:
+    app: bc
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: bc
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: bc
+  labels:
+    app: bc
+spec:
+  to:
+    kind: Service
+    name: bc
+  port:
+    targetPort: 8080
