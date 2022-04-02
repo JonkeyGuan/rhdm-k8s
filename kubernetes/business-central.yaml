@@ -81,16 +81,4 @@ spec:
       targetPort: 8080
   selector:
     app: bc
----
-kind: Route
-apiVersion: route.openshift.io/v1
-metadata:
-  name: bc
-  labels:
-    app: bc
-spec:
-  to:
-    kind: Service
-    name: bc
-  port:
-    targetPort: 8080
+

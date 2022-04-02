@@ -1,0 +1,33 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: bc-external
+  labels:
+    app: bc-external
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
+  selector:
+    app: bc
+  type: NodePort
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: ks-external
+  labels:
+    app: ks-external
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30081
+  selector:
+    app: ks
+  type: NodePort

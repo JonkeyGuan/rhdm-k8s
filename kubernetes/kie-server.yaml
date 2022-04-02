@@ -111,16 +111,3 @@ spec:
       targetPort: 8080
   selector:
     app: ks
----
-kind: Route
-apiVersion: route.openshift.io/v1
-metadata:
-  name: ks
-  labels:
-    app: ks
-spec:
-  to:
-    kind: Service
-    name: ks
-  port:
-    targetPort: 8080
