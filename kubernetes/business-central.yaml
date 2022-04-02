@@ -66,6 +66,13 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+          volumeMounts:
+            - mountPath: /opt/kie/data
+              name: kie-data
+      volumes:
+        - name: kie-data
+          persistentVolumeClaim:
+            claimName: bc-pvc
 ---
 kind: Service
 apiVersion: v1
