@@ -66,6 +66,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: JAVA_OPTS_APPEND
+              value: '-Dfile.encoding=UTF-8'
           volumeMounts:
             - mountPath: /opt/kie/data
               name: kie-data

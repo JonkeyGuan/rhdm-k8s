@@ -94,6 +94,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: JAVA_OPTS_APPEND
+              value: '-Dfile.encoding=UTF-8'
         
 
 ---
